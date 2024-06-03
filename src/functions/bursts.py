@@ -146,6 +146,7 @@ def filter_bursts(data):
 
 # For now, implemented for 
 # - all 5 limbs together
+# - every combination?
 
 
 def is_isolated(start, end, df):
