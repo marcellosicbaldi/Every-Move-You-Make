@@ -144,9 +144,67 @@ def filter_bursts(data):
 
 #### Functions to find combination of bursts happening at different limbs ####
 
-# For now, implemented for 
-# - all 5 limbs together
-# - every combination?
+def characterize_bursts(bursts):
+    """
+    This function characterizes the bursts by the limbs involved in the movement.
+
+    Parameters
+    ----------
+    bursts : dict
+        A dictionary containing the bursts for each limb. Bursts are detected separately for each limb,
+        therefore it is possible that the same movement is detected by multiple limbs. The dictionary
+        should contain the following:
+        - 'lw': DataFrame containing the bursts detected by the left wrist accelerometer
+        - 'rw': DataFrame containing the bursts detected by the right wrist accelerometer
+        - 'll': DataFrame containing the bursts detected by the left ankle accelerometer
+        - 'rl': DataFrame containing the bursts detected by the right ankle accelerometer
+        - 'trunk': DataFrame containing the bursts detected by the trunk accelerometer
+
+    Returns
+    -------
+    pd.DataFrame
+    """
+
+    bursts_lw = bursts["lw"]
+    bursts_rw = bursts["rw"]
+    bursts_ll = bursts["ll"]
+    bursts_rl = bursts["rl"]
+    bursts_trunk = bursts["trunk"]
+
+    # Combine all intervals into a list along with limb identifiers
+    intervals = []
+    intervals.extend((row['start'], row['end'], 'LL') for index, row in bursts_ll.iterrows())
+    intervals.extend((row['start'], row['end'], 'LW') for index, row in bursts_lw.iterrows())
+    intervals.extend((row['start'], row['end'], 'RL') for index, row in bursts_rl.iterrows())
+    intervals.extend((row['start'], row['end'], 'RW') for index, row in bursts_rw.iterrows())
+    intervals.extend((row['start'], row['end'], 'T') for index, row in bursts_trunk.iterrows())
+
+    # Sort intervals by start time
+    intervals.sort(key=lambda x: x[0])
+
+    # Merge overlapping intervals and label them
+    merged_intervals = []
+    current_start, current_end, current_limb = intervals[0]
+    # current_limb = current_limb
+    # print(current_limb)
+
+    for start, end, limb in intervals[1:]:
+        if start <= current_end:  # There is an overlap
+            current_end = max(current_end, end)
+            if limb not in current_limb:
+                current_limb += '+' + limb
+        else:
+            merged_intervals.append((current_start, current_end, current_limb))
+            current_start, current_end, current_limb = start, end, limb
+
+    # Append the last interval
+    merged_intervals.append((current_start, current_end, current_limb))
+    merged_intervals = [(start, end, set(limbs_str.split('+'))) for start, end, limbs_str in merged_intervals]
+
+    # Create a DataFrame for a cleaner view of the merged intervals
+    df_merged_intervals = pd.DataFrame(merged_intervals, columns=['Start', 'End', 'Limbs'])
+
+    return df_merged_intervals
 
 
 def is_isolated(start, end, df):
