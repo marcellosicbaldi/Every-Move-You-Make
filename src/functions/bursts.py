@@ -127,8 +127,8 @@ def filter_bursts(data):
     """
     
     # Calculate the time difference between movements
-    data['next_start_diff'] = data['start'].shift(-1) - data['end']
-    data['prev_end_diff'] = data['start'] - data['end'].shift(1)
+    data['next_start_diff'] = data['Start'].shift(-1) - data['End']
+    data['prev_end_diff'] = data['Start'] - data['End'].shift(1)
     
     # Convert differences to total seconds for comparison
     data['next_start_diff_seconds'] = data['next_start_diff'].dt.total_seconds()
@@ -173,36 +173,38 @@ def characterize_bursts(bursts):
 
     # Combine all intervals into a list along with limb identifiers
     intervals = []
-    intervals.extend((row['start'], row['end'], 'LL') for index, row in bursts_ll.iterrows())
-    intervals.extend((row['start'], row['end'], 'LW') for index, row in bursts_lw.iterrows())
-    intervals.extend((row['start'], row['end'], 'RL') for index, row in bursts_rl.iterrows())
-    intervals.extend((row['start'], row['end'], 'RW') for index, row in bursts_rw.iterrows())
-    intervals.extend((row['start'], row['end'], 'T') for index, row in bursts_trunk.iterrows())
+    intervals.extend((row['start'], row['end'], row['AUC'], row["posture_change"], 'LL') for index, row in bursts_ll.iterrows())
+    intervals.extend((row['start'], row['end'], row['AUC'], row["posture_change"], 'LW') for index, row in bursts_lw.iterrows())
+    intervals.extend((row['start'], row['end'], row['AUC'], row["posture_change"], 'RL') for index, row in bursts_rl.iterrows())
+    intervals.extend((row['start'], row['end'], row['AUC'], row["posture_change"], 'RW') for index, row in bursts_rw.iterrows())
+    intervals.extend((row['start'], row['end'], row['AUC'], row["posture_change"], 'T') for index, row in bursts_trunk.iterrows())
 
     # Sort intervals by start time
     intervals.sort(key=lambda x: x[0])
 
     # Merge overlapping intervals and label them
     merged_intervals = []
-    current_start, current_end, current_limb = intervals[0]
+    current_start, current_end, current_AUC, current_PC, current_limb = intervals[0]
     # current_limb = current_limb
     # print(current_limb)
 
-    for start, end, limb in intervals[1:]:
+    for start, end, AUC, PC, limb in intervals[1:]:
         if start <= current_end:  # There is an overlap
-            current_end = max(current_end, end)
+            current_end = max(current_end, end) 
+            current_PC = current_PC or PC # If any of the intervals has a posture change, the merged interval will have it
             if limb not in current_limb:
                 current_limb += '+' + limb
+            current_AUC += AUC # Sum the AUC of the overlapping intervals
         else:
-            merged_intervals.append((current_start, current_end, current_limb))
-            current_start, current_end, current_limb = start, end, limb
+            merged_intervals.append((current_start, current_end, current_AUC, current_PC, current_limb))
+            current_start, current_end, current_AUC, current_PC, current_limb = start, end, AUC, PC, limb
 
     # Append the last interval
-    merged_intervals.append((current_start, current_end, current_limb))
-    merged_intervals = [(start, end, set(limbs_str.split('+'))) for start, end, limbs_str in merged_intervals]
+    merged_intervals.append((current_start, current_end, current_AUC, current_PC, current_limb))
+    merged_intervals = [(start, end, AUC, PC, set(limbs_str.split('+'))) for start, end, AUC, PC, limbs_str in merged_intervals]
 
     # Create a DataFrame for a cleaner view of the merged intervals
-    df_merged_intervals = pd.DataFrame(merged_intervals, columns=['Start', 'End', 'Limbs'])
+    df_merged_intervals = pd.DataFrame(merged_intervals, columns=['Start', 'End', 'AUC', 'PC', 'Limbs'])
 
     return df_merged_intervals
 
