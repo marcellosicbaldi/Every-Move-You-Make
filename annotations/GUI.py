@@ -115,7 +115,6 @@ class MainWindow(QMainWindow):
         artifacts.to_csv(data_path + "/" + loc + "/bursts_ANNOT.csv", index=False)
 
 # Select subject and location
-sub = "906"
 comb_location = {
     "158": [],
     "633": [],
@@ -132,7 +131,8 @@ comb_location = {
 
 }
 
-loc = "rw"
+sub = "906"
+loc = "ll"
 
 diary_SPT = {    
     "158": [pd.Timestamp('2024-02-28 23:00:00'), pd.Timestamp('2024-02-29 07:15:00')], # 158 OK
@@ -157,13 +157,27 @@ data_path =  "/Users/marcellosicbaldi/Library/CloudStorage/OneDrive-AlmaMaterStu
 acc_norm_raw = pd.read_pickle(data_path + "/" + loc + "/" + loc + ".pkl")
 acc_norm_raw = pd.Series(nk.signal_filter(acc_norm_raw.values, sampling_rate = 50, lowcut=0.1, highcut=5, method='butterworth', order=8), index = acc_norm_raw.index)
 
-
 # Split the data according to the sleep midpoint
 sleep_midPoint = start_sleep + (end_sleep - start_sleep) / 2
 
-# RW: select the 1 hour before and after the midpoint of sleep
+####### TO COMMENT OUT #######
+
+# First location
 loc1_df_1 = acc_norm_raw.loc[sleep_midPoint - pd.Timedelta(hours = 1):sleep_midPoint]
 loc1_df_2 = acc_norm_raw.loc[sleep_midPoint:sleep_midPoint + pd.Timedelta(hours = 1)]
+
+# Second location
+loc1_df_1 = acc_norm_raw.loc[sleep_midPoint - pd.Timedelta(hours = 2):sleep_midPoint - pd.Timedelta(hours = 1)]
+loc1_df_2 = acc_norm_raw.loc[sleep_midPoint + pd.Timedelta(hours = 1):sleep_midPoint + pd.Timedelta(hours = 2)]
+
+# Third location
+loc1_df_1 = acc_norm_raw.loc[sleep_midPoint - pd.Timedelta(hours = 3):sleep_midPoint - pd.Timedelta(hours = 2)]
+loc1_df_2 = acc_norm_raw.loc[sleep_midPoint + pd.Timedelta(hours = 2):sleep_midPoint + pd.Timedelta(hours = 3)]
+
+#######             #######
+
+# concatenate the two dataframes
+current_acc_1 = pd.concat([loc1_df_1, loc1_df_2])
 
 # # LL: select the hour 2 hours before and after the midpoint of sleep
 # loc2_df_1 = acc_norm_raw.loc[sleep_midPoint - pd.Timedelta(hours = 2):sleep_midPoint - pd.Timedelta(hours = 1)]
@@ -177,14 +191,25 @@ loc1_df_2 = acc_norm_raw.loc[sleep_midPoint:sleep_midPoint + pd.Timedelta(hours 
 loc1_env_1 = return_envelope_diff(loc1_df_1)
 loc1_env_2 = return_envelope_diff(loc1_df_2)
 
+# concatenate the two dataframes
+current_env_1 = pd.concat([loc1_env_1, loc1_env_2])
+
 # loc2_env_1 = return_envelope_diff(loc2_df_1)
 # loc2_env_2 = return_envelope_diff(loc2_df_2)
 
 # loc3_env_1 = return_envelope_diff(loc3_df_1)
 # loc3_env_2 = return_envelope_diff(loc3_df_2)
 
+# if __name__ == '__main__':
+#     for i in range(3): # loop across locations
+#         loc = comb_location[sub][i][0]
+#         current_acc = pd.read_pickle(data_path + "/" + loc + "/" + loc + ".pkl")
+#         current_acc_1 = current_acc.loc[sleep_midPoint - pd.Timedelta(hours = comb_location[sub][i][1]):sleep_midPoint - pd.Timedelta(hours = i)] # before sleep midpoint
+#         current_acc_2 = current_acc.loc[sleep_midPoint + pd.Timedelta(hours = i):sleep_midPoint + pd.Timedelta(hours = comb_location[sub][i][1])] # after sleep midpoint
+#         current_env_1 = return_envelope_diff(current_acc_1)
+#         current_env_2 = return_envelope_diff(current_acc_2)
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    main = MainWindow(loc1_df_1, loc1_env_1)
+    main = MainWindow(current_acc_1, current_env_1)
     main.show()
     sys.exit(app.exec_())
