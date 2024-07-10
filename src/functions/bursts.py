@@ -64,7 +64,7 @@ def detect_bursts(acc, envelope = True, plot = False, alfa = 15):
         if len(lmax) > len(lmin):
             lmax = lmax[1:]
         th = np.percentile(acc.values[lmax] - acc.values[lmin], 10) * alfa
-        std_acc = pd.Series(acc.values[lmax] - acc.values[lmin], index = acc.index[lmax])
+        std_acc = pd.Series(acc.values[lmax] - acc.values[lmin], index = acc.index[lmax]) # TODO: rename variable
     else:
         std_acc = acc.resample("1 s").std()
         std_acc.index.round("1 s")
@@ -72,6 +72,9 @@ def detect_bursts(acc, envelope = True, plot = False, alfa = 15):
 
     if plot:
         plt.figure()
+        plt.subplot(2,1,1)
+        plt.plot(acc, color = 'k')
+        plt.subplot(2,1,2, sharex = plt.subplot(2,1,1))
         plt.plot(std_acc, color = 'b')
         plt.axhline(th, color = 'r')
 
