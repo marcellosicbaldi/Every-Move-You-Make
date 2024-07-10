@@ -10,7 +10,7 @@ import matplotlib as mpl
 mpl.rcParams["lines.linewidth"] = 0.91
 mpl.rcParams["xtick.labelsize"] = 16
 
-from functions.bursts import return_envelope_diff
+from envelope import return_envelope_diff
 
 class ECGViewer(FigureCanvas):
     def __init__(self, acc_data, env_data, parent=None):
