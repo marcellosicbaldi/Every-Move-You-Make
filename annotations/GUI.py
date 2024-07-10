@@ -9,6 +9,9 @@ import matplotlib.dates as mdates
 import matplotlib as mpl
 mpl.rcParams["lines.linewidth"] = 0.91
 mpl.rcParams["xtick.labelsize"] = 16
+import seaborn as sns
+import matplotlib.pyplot as plt
+plt.style.use('seaborn-v0_8-whitegrid')
 
 import neurokit2 as nk
 
