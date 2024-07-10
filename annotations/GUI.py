@@ -83,7 +83,7 @@ class ECGViewer(FigureCanvas):
 class MainWindow(QMainWindow):
     def __init__(self, acc_data, env_data):
         super().__init__()
-        self.setWindowTitle('ECG Artifact Annotation Tool')
+        self.setWindowTitle('ACC Bursts Annotation Tool')
         self.setGeometry(100, 100, 1900, 1200)  # Adjust size as needed
         widget = QWidget()
         self.setCentralWidget(widget)
@@ -102,7 +102,7 @@ class MainWindow(QMainWindow):
         # layout.addWidget(self.print_button)
 
         # Button to save artifact arrays
-        self.save_button = QPushButton('Save Artifact Arrays')
+        self.save_button = QPushButton('Save Bursts Annotations')
         self.save_button.clicked.connect(self.save_artifact_arrays)
         layout.addWidget(self.save_button)
 
