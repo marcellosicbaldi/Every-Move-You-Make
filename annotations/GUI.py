@@ -10,6 +10,8 @@ import matplotlib as mpl
 mpl.rcParams["lines.linewidth"] = 0.91
 mpl.rcParams["xtick.labelsize"] = 16
 
+import neurokit2 as nk
+
 from envelope import return_envelope_diff
 
 class ECGViewer(FigureCanvas):
@@ -150,6 +152,8 @@ start_sleep, end_sleep = diary_SPT[sub]
 data_path =  "/Users/marcellosicbaldi/Library/CloudStorage/OneDrive-AlmaMaterStudiorumUniversitàdiBologna/General - LG-MIAR (rehab)/SCORING_bursts/" + sub 
 #### PAOLA: Change here the index of the comb_location dictionary {comb_location[sub][0], comb_location[sub][1], comb_location[sub][2]}
 acc_norm_raw = pd.read_pickle(data_path + "/" + loc + "/" + loc + ".pkl")
+acc_norm_raw = pd.Series(nk.signal_filter(acc_norm_raw.values, sampling_rate = 50, lowcut=0.1, highcut=5, method='butterworth', order=8), index = acc_norm_raw.index)
+
 
 # Split the data according to the sleep midpoint
 sleep_midPoint = start_sleep + (end_sleep - start_sleep) / 2
