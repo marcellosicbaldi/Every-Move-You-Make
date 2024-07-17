@@ -25,10 +25,12 @@ class ECGViewer(FigureCanvas):
         self.axes1.get_xaxis().set_visible(False) # Hide x-axis of the first subplot
         self.axes1.yaxis.set_ticklabels([])
         self.axes1.yaxis.set_ticks([])
-        self.axes1.set_ylabel('Acc norm', fontsize=18)
+        self.axes1.grid(True)
+        self.axes1.set_ylabel('Env Diff', fontsize=18)
         self.axes2.yaxis.set_tick_params(labelsize=16)
         self.axes2.xaxis.set_tick_params(labelsize=16)
-        self.axes2.set_ylabel('Env Diff', fontsize=18)
+        self.axes2.set_ylabel('Acc norm', fontsize=18)
+        self.axes2.grid(True)
         FigureCanvas.__init__(self, fig)
         self.setParent(parent)
 
@@ -48,8 +50,8 @@ class ECGViewer(FigureCanvas):
 
     def plot_ecg(self, acc_data, env_data):
         # Assuming the data is a pd.Series with datetime index
-        self.axes1.plot(acc_data.index, acc_data.values, 'r')
-        self.axes2.plot(env_data.index, env_data.values)
+        self.axes1.plot(env_data.index, env_data.values, 'k')
+        self.axes2.plot(acc_data.index, acc_data.values)
         self.draw()
 
     def on_click(self, event):
@@ -116,23 +118,23 @@ class MainWindow(QMainWindow):
 
 # Select subject and location
 comb_location = {
-    "158": [],
-    "633": [],
-    "906": ["rw", "ll", "t"],
-    "958": [],
-    "127": [],
-    "098": [],
-    "547": [],
-    "815": [],
-    "914": [],
-    "971": [],
-    "279": [],
-    "965": [],
-
+    "158": ["la", "trunk", "rw"],
+    "633": ["trunk", "ra", "lw"],
+    "906": ["rw", "la", "trunk"],
+    "958": ["ra", "trunk", "lw"],
+    "127": ["la", "trunk", "rw"],
+    "098": ["trunk", "lw", "ra"],
+    "547": ["l", "la", "trunk"],
+    "815": ["trunk", "ra", "lw"],
+    "914": ["ra", "trunk", "lw"],
+    "971": ["la", "trunk", "rw"],
+    "279": ["trunk", "la", "rw"],
+    "965": ["rw", "trunk", "la"]
 }
 
 sub = "906"
-loc = "ll"
+## Modificare qui per cambiare la location (0 --> 1 --> 2)
+loc = comb_location[sub][2]
 
 diary_SPT = {    
     "158": [pd.Timestamp('2024-02-28 23:00:00'), pd.Timestamp('2024-02-29 07:15:00')], # 158 OK
@@ -163,14 +165,14 @@ sleep_midPoint = start_sleep + (end_sleep - start_sleep) / 2
 ####### TO COMMENT OUT #######
 
 # First location
-loc1_df_1 = acc_norm_raw.loc[sleep_midPoint - pd.Timedelta(hours = 1):sleep_midPoint]
-loc1_df_2 = acc_norm_raw.loc[sleep_midPoint:sleep_midPoint + pd.Timedelta(hours = 1)]
+# loc1_df_1 = acc_norm_raw.loc[sleep_midPoint - pd.Timedelta(hours = 1):sleep_midPoint]
+# loc1_df_2 = acc_norm_raw.loc[sleep_midPoint:sleep_midPoint + pd.Timedelta(hours = 1)]
 
-# Second location
-loc1_df_1 = acc_norm_raw.loc[sleep_midPoint - pd.Timedelta(hours = 2):sleep_midPoint - pd.Timedelta(hours = 1)]
-loc1_df_2 = acc_norm_raw.loc[sleep_midPoint + pd.Timedelta(hours = 1):sleep_midPoint + pd.Timedelta(hours = 2)]
+# # Second location
+# loc1_df_1 = acc_norm_raw.loc[sleep_midPoint - pd.Timedelta(hours = 2):sleep_midPoint - pd.Timedelta(hours = 1)]
+# loc1_df_2 = acc_norm_raw.loc[sleep_midPoint + pd.Timedelta(hours = 1):sleep_midPoint + pd.Timedelta(hours = 2)]
 
-# Third location
+# # Third location
 loc1_df_1 = acc_norm_raw.loc[sleep_midPoint - pd.Timedelta(hours = 3):sleep_midPoint - pd.Timedelta(hours = 2)]
 loc1_df_2 = acc_norm_raw.loc[sleep_midPoint + pd.Timedelta(hours = 2):sleep_midPoint + pd.Timedelta(hours = 3)]
 
@@ -179,35 +181,12 @@ loc1_df_2 = acc_norm_raw.loc[sleep_midPoint + pd.Timedelta(hours = 2):sleep_midP
 # concatenate the two dataframes
 current_acc_1 = pd.concat([loc1_df_1, loc1_df_2])
 
-# # LL: select the hour 2 hours before and after the midpoint of sleep
-# loc2_df_1 = acc_norm_raw.loc[sleep_midPoint - pd.Timedelta(hours = 2):sleep_midPoint - pd.Timedelta(hours = 1)]
-# loc2_df_2 = acc_norm_raw.loc[sleep_midPoint + pd.Timedelta(hours = 1):sleep_midPoint + pd.Timedelta(hours = 2)]
-
-# # Trunk: select the hour 3 hours before and after the midpoint of sleep
-# loc3_df_1 = acc_norm_raw.loc[sleep_midPoint - pd.Timedelta(hours = 3):sleep_midPoint - pd.Timedelta(hours = 2)]
-# loc3_df_2 = acc_norm_raw.loc[sleep_midPoint + pd.Timedelta(hours = 2):sleep_midPoint + pd.Timedelta(hours = 3)]
 
 # Extract envelope differences
 loc1_env_1 = return_envelope_diff(loc1_df_1)
 loc1_env_2 = return_envelope_diff(loc1_df_2)
-
-# concatenate the two dataframes
 current_env_1 = pd.concat([loc1_env_1, loc1_env_2])
 
-# loc2_env_1 = return_envelope_diff(loc2_df_1)
-# loc2_env_2 = return_envelope_diff(loc2_df_2)
-
-# loc3_env_1 = return_envelope_diff(loc3_df_1)
-# loc3_env_2 = return_envelope_diff(loc3_df_2)
-
-# if __name__ == '__main__':
-#     for i in range(3): # loop across locations
-#         loc = comb_location[sub][i][0]
-#         current_acc = pd.read_pickle(data_path + "/" + loc + "/" + loc + ".pkl")
-#         current_acc_1 = current_acc.loc[sleep_midPoint - pd.Timedelta(hours = comb_location[sub][i][1]):sleep_midPoint - pd.Timedelta(hours = i)] # before sleep midpoint
-#         current_acc_2 = current_acc.loc[sleep_midPoint + pd.Timedelta(hours = i):sleep_midPoint + pd.Timedelta(hours = comb_location[sub][i][1])] # after sleep midpoint
-#         current_env_1 = return_envelope_diff(current_acc_1)
-#         current_env_2 = return_envelope_diff(current_acc_2)
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     main = MainWindow(current_acc_1, current_env_1)
