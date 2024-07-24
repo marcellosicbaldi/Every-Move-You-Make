@@ -12,6 +12,7 @@ def hl_envelopes_idx(s, dmin=1, dmax=1, split=False):
     s: 1d-array, data signal from which to extract high and low envelopes
     dmin, dmax: int, optional, size of chunks, use this if the size of the input signal is too big
     split: bool, optional, if True, split the signal in half along its mean, might help to generate the envelope in some cases
+    resample: bool, optional, if True, resample the signal to the original size
 
     Returns
     -------
@@ -63,22 +64,30 @@ def detect_bursts(acc, envelope = True, plot = False, alfa = 15):
             lmin = lmin[:-1]
         if len(lmax) > len(lmin):
             lmax = lmax[1:]
+        upper_envelope = acc.values[lmax]
+        lower_envelope = acc.values[lmin]
+        # resample the envelopes to the original size
+        upper_envelope_res = np.interp(np.arange(len(acc)), lmax, upper_envelope)
+        lower_envelope_res = np.interp(np.arange(len(acc)), lmin, lower_envelope)
+        env_diff_not_res = upper_envelope - lower_envelope
+        env_diff_res = upper_envelope_res - lower_envelope_res
         th = np.percentile(acc.values[lmax] - acc.values[lmin], 10) * alfa
-        std_acc = pd.Series(acc.values[lmax] - acc.values[lmin], index = acc.index[lmax]) # TODO: rename variable
+        env_diff = pd.Series(env_diff_res, index = acc.index)
     else:
         std_acc = acc.resample("1 s").std()
         std_acc.index.round("1 s")
         th = np.percentile(std_acc, 10) * alfa
+        env_diff = std_acc
 
     if plot:
         plt.figure()
         plt.subplot(2,1,1)
         plt.plot(acc, color = 'k')
         plt.subplot(2,1,2, sharex = plt.subplot(2,1,1))
-        plt.plot(std_acc, color = 'b')
+        plt.plot(env_diff, color = 'b')
         plt.axhline(th, color = 'r')
 
-    bursts1 = (std_acc > th).astype(int)
+    bursts1 = (env_diff > th).astype(int)
     start_burst = bursts1.where(bursts1.diff()==1).dropna()
     end_burst = bursts1.where(bursts1.diff()==-1).dropna()
     if bursts1.iloc[0] == 1:
@@ -109,8 +118,8 @@ def detect_bursts(acc, envelope = True, plot = False, alfa = 15):
     for i in range(len(bursts)):
         # peak-to-peak amplitude of bp acceleration
         burst_amplitude1.append(acc.loc[bursts["start"].iloc[i]:bursts["end"].iloc[i]].max() - acc.loc[bursts["start"].iloc[i]:bursts["end"].iloc[i]].min())
-        # AUC of std_acc
-        burst_amplitude2.append(np.trapz(std_acc.loc[bursts["start"].iloc[i]:bursts["end"].iloc[i]]))
+        # AUC of env_diff
+        burst_amplitude2.append(np.trapz(env_diff.loc[bursts["start"].iloc[i]:bursts["end"].iloc[i]]))
     bursts["duration"] = bursts["end"] - bursts["start"]
     bursts["peak-to-peak"] = burst_amplitude1
     bursts["AUC"] = burst_amplitude2

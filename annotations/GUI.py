@@ -124,7 +124,7 @@ comb_location = {
     "958": ["ra", "trunk", "lw"],
     "127": ["la", "trunk", "rw"],
     "098": ["trunk", "lw", "ra"],
-    "547": ["l", "la", "trunk"],
+    "547": ["la", "lw", "trunk"],
     "815": ["trunk", "ra", "lw"],
     "914": ["ra", "trunk", "lw"],
     "971": ["la", "trunk", "rw"],
@@ -132,7 +132,8 @@ comb_location = {
     "965": ["rw", "trunk", "la"]
 }
 
-sub = "906"
+## Modificare qui per cambiare il soggetto
+sub = "965"
 ## Modificare qui per cambiare la location (0 --> 1 --> 2)
 loc = comb_location[sub][2]
 
@@ -162,17 +163,17 @@ acc_norm_raw = pd.Series(nk.signal_filter(acc_norm_raw.values, sampling_rate = 5
 # Split the data according to the sleep midpoint
 sleep_midPoint = start_sleep + (end_sleep - start_sleep) / 2
 
-####### TO COMMENT OUT #######
+####### TO COMMENT Based on the selected Sensor Position  #######
 
 # First location
 # loc1_df_1 = acc_norm_raw.loc[sleep_midPoint - pd.Timedelta(hours = 1):sleep_midPoint]
 # loc1_df_2 = acc_norm_raw.loc[sleep_midPoint:sleep_midPoint + pd.Timedelta(hours = 1)]
 
-# # Second location
+# Second location
 # loc1_df_1 = acc_norm_raw.loc[sleep_midPoint - pd.Timedelta(hours = 2):sleep_midPoint - pd.Timedelta(hours = 1)]
 # loc1_df_2 = acc_norm_raw.loc[sleep_midPoint + pd.Timedelta(hours = 1):sleep_midPoint + pd.Timedelta(hours = 2)]
 
-# # Third location
+# Third location
 loc1_df_1 = acc_norm_raw.loc[sleep_midPoint - pd.Timedelta(hours = 3):sleep_midPoint - pd.Timedelta(hours = 2)]
 loc1_df_2 = acc_norm_raw.loc[sleep_midPoint + pd.Timedelta(hours = 2):sleep_midPoint + pd.Timedelta(hours = 3)]
 
@@ -180,7 +181,6 @@ loc1_df_2 = acc_norm_raw.loc[sleep_midPoint + pd.Timedelta(hours = 2):sleep_midP
 
 # concatenate the two dataframes
 current_acc_1 = pd.concat([loc1_df_1, loc1_df_2])
-
 
 # Extract envelope differences
 loc1_env_1 = return_envelope_diff(loc1_df_1)
