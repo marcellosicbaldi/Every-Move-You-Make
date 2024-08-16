@@ -1,7 +1,7 @@
 # Movement-HR-Sleep
 This repo contains the code relative to the analysis on the HR response following movement bursts detected with accelerometers during sleep
 
-It is organized in the following way: `src/functions` containes the functions used to process raw accelerometer and raw ECG data; `src/notebook_bursts.ipynb` and `src/notebook_HRresponse.ipynb` are the notebooks used to produce the results
+It is organized in the following way: `src/functions` containes the functions used to process raw accelerometer and raw ECG data; `src/detect_bursts.py` and `src/HR_response.py` are the scripts used to produce the results
 
 The most relevant functions are inside `src/functions/bursts.py`and `src/functions/HR_response.py`, and are:
   - `detect_bursts()`: bursts detection from raw acceleration based on signal envelopes
