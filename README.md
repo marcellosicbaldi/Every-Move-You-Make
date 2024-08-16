@@ -8,4 +8,4 @@ The most relevant functions are inside `src/functions/bursts.py`and `src/functio
   - `characterize_bursts()`: Classify each burst based on the sensors involved in the movement
   - `detect_HR_change_from_RR()`: Detect HR response to burst from RR intervals 
 
-The folder `annotations` contains two graphical user interfaces (`GUI_ecg_artifacts.py` and `GUI_bursts.py`, used to annotate artifacts in the ECG time-series and two annotate accelerometer bursts for algorithm validation, respectively).
+The folder `annotations` contains two graphical user interfaces (`GUI_ecg_artifacts.py` and `GUI_bursts.py`, used to mark artifacts in the ECG time-series and to annotate accelerometer bursts for algorithm validation, respectively).
