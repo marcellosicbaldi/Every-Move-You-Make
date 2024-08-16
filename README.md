@@ -1,5 +1,5 @@
 # Movement-HR-Sleep
-This repo contains the code relative to the analysis on the HR response following movement bursts detected with accelerometers during sleep
+This repo contains the code relative to the paper ... submitted to ...
 
 It is organized in the following way: `src/functions` containes the functions used to process raw accelerometer and raw ECG data; `src/detect_bursts.py` and `src/HR_response.py` are the scripts used to produce the results
 
