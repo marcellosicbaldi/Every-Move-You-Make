@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import neurokit2 as nk
 
 #### Functions to detect bursts in acceleration signal ####
 
@@ -12,7 +13,6 @@ def hl_envelopes_idx(s, dmin=1, dmax=1, split=False):
     s: 1d-array, data signal from which to extract high and low envelopes
     dmin, dmax: int, optional, size of chunks, use this if the size of the input signal is too big
     split: bool, optional, if True, split the signal in half along its mean, might help to generate the envelope in some cases
-    resample: bool, optional, if True, resample the signal to the original size
 
     Returns
     -------
@@ -39,53 +39,76 @@ def hl_envelopes_idx(s, dmin=1, dmax=1, split=False):
     
     return lmin,lmax
 
-def detect_bursts(acc, envelope = True, plot = False, alfa = 15):
+def compute_envelope(acc, resample = True):
+    """
+    Compute the envelope of the acceleration signal
+
+    Parameters
+    ----------
+    acc : pd.Series
+        Band-pass filtered accelerometer signal magnitude vector
+    resample : bool, optional
+        If True, resample the envelope to the original size of the signal
+
+    Returns
+    -------
+    env_diff : pd.Series
+        Envelope difference of the acceleration signal
+    """
+
+    lmin, lmax = hl_envelopes_idx(acc.values, dmin = 10, dmax = 10)
+
+    # adjust shapes
+    if len(lmin) > len(lmax):
+        lmin = lmin[:-1]
+    if len(lmax) > len(lmin):
+        lmax = lmax[1:]
+        
+    upper_envelope = acc.values[lmax]
+    lower_envelope = acc.values[lmin]
+                                
+    if resample:
+        upper_envelope_res = np.interp(np.arange(len(acc)), lmax, upper_envelope)
+        lower_envelope_res = np.interp(np.arange(len(acc)), lmin, lower_envelope)
+        env_diff = pd.Series(upper_envelope_res - lower_envelope_res, index = acc.index)
+    else:
+        env_diff = pd.Series(upper_envelope - lower_envelope, index = acc.index[lmax])
+
+    return env_diff
+
+def detect_bursts(acc, envelope = True, resample_envelope = True, alfa = None):
     """
     Detect bursts in acceleration signal
 
     Parameters
     ----------
-    std_acc : pd.Series
-        Standard deviation of acceleration signal with a 1 s resolution
+    acc : pd.Series
+        Band-pass filtered accelerometer signal magnitude vector
     envelope : bool, optional
         If True, detect bursts based on the envelope of the signal
         If False, detect bursts based on the std of the signal
+    resample_envelope : bool, optional
+        If True, resample the envelope to the original size of the signal
+    alfa : float, optional
+        Threshold for detecting bursts
 
     Returns
     -------
     bursts : pd.Series
-        pd.DataFrame with burst start times, end times, and duration
+        pd.DataFrame with burst start times, end times, duration, peak-to-peak amplitude, and AUC
     """
 
+    # band-pass filter the signal
+    acc = pd.Series(nk.signal_filter(acc.values, sampling_rate = 100, lowcut=0.1, highcut=10, method='butterworth', order=8), index = acc.index)
+
     if envelope:
-        lmin, lmax = hl_envelopes_idx(acc.values, dmin=9, dmax=9)
-        # adjust shapes
-        if len(lmin) > len(lmax):
-            lmin = lmin[:-1]
-        if len(lmax) > len(lmin):
-            lmax = lmax[1:]
-        upper_envelope = acc.values[lmax]
-        lower_envelope = acc.values[lmin]
-        # resample the envelopes to the original size
-        upper_envelope_res = np.interp(np.arange(len(acc)), lmax, upper_envelope)
-        lower_envelope_res = np.interp(np.arange(len(acc)), lmin, lower_envelope)
-        env_diff_not_res = upper_envelope - lower_envelope
-        env_diff_res = upper_envelope_res - lower_envelope_res
-        th = np.percentile(acc.values[lmax] - acc.values[lmin], 10) * alfa
-        env_diff = pd.Series(env_diff_res, index = acc.index)
+        env_diff = compute_envelope(acc, resample = resample_envelope)
+        th = alfa
     else:
         std_acc = acc.resample("1 s").std()
         std_acc.index.round("1 s")
         th = np.percentile(std_acc, 10) * alfa
         env_diff = std_acc
-
-    if plot:
-        plt.figure()
-        plt.subplot(2,1,1)
-        plt.plot(acc, color = 'k')
-        plt.subplot(2,1,2, sharex = plt.subplot(2,1,1))
-        plt.plot(env_diff, color = 'b')
-        plt.axhline(th, color = 'r')
 
     bursts1 = (env_diff > th).astype(int)
     start_burst = bursts1.where(bursts1.diff()==1).dropna()
@@ -104,6 +127,7 @@ def detect_bursts(acc, envelope = True, plot = False, alfa = 15):
 
     duration_between_bursts = (start.iloc[1:].values - end.iloc[:-1].values)
 
+    # If two bursts are too close to each other (5s), consider them as one burst
     for i in range(len(start)-1):
         if duration_between_bursts[i] < pd.Timedelta("5 s"):
             end[i] = np.nan
@@ -113,16 +137,16 @@ def detect_bursts(acc, envelope = True, plot = False, alfa = 15):
 
     # extract amplitude of the bursts
     bursts = pd.DataFrame({"start": start.reset_index(drop = True), "end": end.reset_index(drop = True)})
-    burst_amplitude1 = []
-    burst_amplitude2 = []
+    p2p = []
+    auc = []
     for i in range(len(bursts)):
         # peak-to-peak amplitude of bp acceleration
-        burst_amplitude1.append(acc.loc[bursts["start"].iloc[i]:bursts["end"].iloc[i]].max() - acc.loc[bursts["start"].iloc[i]:bursts["end"].iloc[i]].min())
+        p2p.append(acc.loc[bursts["start"].iloc[i]:bursts["end"].iloc[i]].max() - acc.loc[bursts["start"].iloc[i]:bursts["end"].iloc[i]].min())
         # AUC of env_diff
-        burst_amplitude2.append(np.trapz(env_diff.loc[bursts["start"].iloc[i]:bursts["end"].iloc[i]]))
+        auc.append(np.trapz(env_diff.loc[bursts["start"].iloc[i]:bursts["end"].iloc[i]]))
     bursts["duration"] = bursts["end"] - bursts["start"]
-    bursts["peak-to-peak"] = burst_amplitude1
-    bursts["AUC"] = burst_amplitude2
+    bursts["peak-to-peak"] = p2p
+    bursts["AUC"] = auc
     return bursts
 
 #### Functions to filter bursts that are too close to each other ####
@@ -174,7 +198,8 @@ def characterize_bursts(bursts):
 
     Returns
     -------
-    pd.DataFrame
+    df_merged_intervals : pd.DataFrame
+        A DataFrame containing the bursts in chronological order characterized by the limbs involved in the movement.
     """
 
     bursts_lw = bursts["lw"]
@@ -183,44 +208,46 @@ def characterize_bursts(bursts):
     bursts_rl = bursts["rl"]
     bursts_trunk = bursts["trunk"]
 
-    # Combine all intervals into a list along with limb identifiers
+    # Combine all intervals into a list
     intervals = []
-    intervals.extend((row['start'], row['end'], row['AUC'], row["posture_change"], 'LL') for index, row in bursts_ll.iterrows())
-    intervals.extend((row['start'], row['end'], row['AUC'], row["posture_change"], 'LW') for index, row in bursts_lw.iterrows())
-    intervals.extend((row['start'], row['end'], row['AUC'], row["posture_change"], 'RL') for index, row in bursts_rl.iterrows())
-    intervals.extend((row['start'], row['end'], row['AUC'], row["posture_change"], 'RW') for index, row in bursts_rw.iterrows())
-    intervals.extend((row['start'], row['end'], row['AUC'], row["posture_change"], 'T') for index, row in bursts_trunk.iterrows())
+    intervals.extend((row['start'], row['end'], row['AUC'], row["peak-to-peak"], row["posture_change"], row["transition"], 'LL') for _, row in bursts_ll.iterrows())
+    intervals.extend((row['start'], row['end'], row['AUC'], row["peak-to-peak"], row["posture_change"], row["transition"], 'LW') for _, row in bursts_lw.iterrows())
+    intervals.extend((row['start'], row['end'], row['AUC'], row["peak-to-peak"], row["posture_change"], row["transition"], 'RL') for _, row in bursts_rl.iterrows())
+    intervals.extend((row['start'], row['end'], row['AUC'], row["peak-to-peak"], row["posture_change"], row["transition"], 'RW') for _, row in bursts_rw.iterrows())
+    intervals.extend((row['start'], row['end'], row['AUC'], row["peak-to-peak"], row["posture_change"], row["transition"], 'T') for _, row in bursts_trunk.iterrows())
 
     # Sort intervals by start time
     intervals.sort(key=lambda x: x[0])
 
     # Merge overlapping intervals and label them
     merged_intervals = []
-    current_start, current_end, current_AUC, current_PC, current_limb = intervals[0]
-    # current_limb = current_limb
-    # print(current_limb)
+    current_start, current_end, current_AUC, current_p2p, current_PC, current_transition, current_limb = intervals[0]
 
-    for start, end, AUC, PC, limb in intervals[1:]:
+    for start, end, AUC, p2p, PC, transition, limb in intervals[1:]:
         if start <= current_end:  # There is an overlap
             current_end = max(current_end, end) 
             current_PC = current_PC or PC # If any of the intervals has a posture change, the merged interval will have it
+            current_transition = current_transition or transition # If any of the intervals has a transition, the merged interval will have it
             if limb not in current_limb:
                 current_limb += '+' + limb
             current_AUC += AUC # Sum the AUC of the overlapping intervals
+            current_p2p += p2p # Sum the peak-to-peak amplitude of the overlapping intervals
         else:
-            merged_intervals.append((current_start, current_end, current_AUC, current_PC, current_limb))
-            current_start, current_end, current_AUC, current_PC, current_limb = start, end, AUC, PC, limb
+            merged_intervals.append((current_start, current_end, current_AUC, current_p2p, current_PC, current_transition, current_limb))
+            current_start, current_end, current_AUC, current_p2p, current_PC, current_transition, current_limb = start, end, AUC, p2p, PC, transition, limb
 
     # Append the last interval
-    merged_intervals.append((current_start, current_end, current_AUC, current_PC, current_limb))
-    merged_intervals = [(start, end, AUC, PC, set(limbs_str.split('+'))) for start, end, AUC, PC, limbs_str in merged_intervals]
+    merged_intervals.append((current_start, current_end, current_AUC, current_p2p, current_PC, current_transition, current_limb))
+    merged_intervals = [(start, end, AUC, p2p, PC, transition, set(limbs_str.split('+'))) for start, end, AUC, p2p, PC, transition, limbs_str in merged_intervals]
 
     # Create a DataFrame for a cleaner view of the merged intervals
-    df_merged_intervals = pd.DataFrame(merged_intervals, columns=['Start', 'End', 'AUC', 'PC', 'Limbs'])
+    df_merged_intervals = pd.DataFrame(merged_intervals, columns=['Start', 'End', 'AUC', 'p2p', 'PC', 'transition', 'Limbs'])
 
     return df_merged_intervals
 
 
+
+#### OLD FUNCTIONS ####
 def is_isolated(start, end, df):
     # Check if the start or end of an interval falls within any interval in the dataframe
     overlap = df[(df['start'] <= end) & (df['end'] >= start)]

@@ -54,12 +54,12 @@ def detect_posture_changes(df, window_size_samples=1, angle_threshold1=30, angle
                 posture_change_degrees10.append(np.rad2deg(orientation_change10))
 
     # Marking boundaries for posture change
-    datetime_indices30 = df.index.to_series()[posture_change_indices30]
+    datetime_indices30 = df.index.to_series().iloc[posture_change_indices30]
     df['posture_change30'] = False
     df.loc[datetime_indices30, 'posture_change30'] = True
     df['posture_change_degrees30'] = 0
     df.loc[datetime_indices30, 'posture_change_degrees30'] = posture_change_degrees30
-    datetime_indices10 = df.index.to_series()[posture_change_indices10]
+    datetime_indices10 = df.index.to_series().iloc[posture_change_indices10]
     df['posture_change10'] = False
     df.loc[datetime_indices10, 'posture_change10'] = True
     df['posture_change_degrees10'] = 0

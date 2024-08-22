@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-def detect_HR_change_from_RR(bursts, hr_df, off, plot = False):
+def detect_HR_change(bursts, hr_df, off, plot = False):
     """
     Detect HR change from RR intervals. RR intervals are already corrected using the kubios method.
 
@@ -13,50 +13,31 @@ def detect_HR_change_from_RR(bursts, hr_df, off, plot = False):
     hr_df : pd.Series
         HR signal
     plot : bool, optional
-        If True, plot the HR signal and the detected HR change  
-
+        If True, plot the HR signal and the detected HR change (for debugging purposes)
     Returns
     -------
-    HR_change_max : list
-        List with the maximum HR change (HR peak) for each burst
-    latency_HR_change_max : list
-        List with the latency of the maximum HR change (HR peak) for each burst
-    duration_HR_response : list
-        List with the duration of the HR response for each burst (defined as the time between movement onset and the HR return to baseline)    
+    bursts : pd.DataFrame
+        Input DataFrame with added HR response, HR response normalized, HR baseline, HR peak, and HR peak latency 
     """
-    HR_bursts_df = []
-    HR_change_max = []
-    latency_HR_change_max = []
-    duration_HR_response = []
-    posture_change = []
-    AUC = []
+
+    bursts["HR_response"] = [None] * len(bursts)
+    bursts["HR_response_normalized"] = [None] * len(bursts)
     for i in range(len(bursts)):
-        hr_burst = hr_df.loc[bursts["Start"].iloc[i] - pd.Timedelta(seconds = 19+off):bursts["Start"].iloc[i] + pd.Timedelta(seconds = 40-off)]
-        if hr_burst.isna().sum() > 0:
-            # print(f"Missing HR data for burst {i}")
+        hr_burst = hr_df.loc[bursts["Start"].iloc[i] - pd.Timedelta(seconds = 19+off):bursts["Start"].iloc[i] + pd.Timedelta(seconds = 50-off)]
+        if hr_burst.isna().sum() > 0: # missing HR data
             continue
             
         df_burst = pd.DataFrame({'HR': hr_burst}, index = hr_burst.index)
         HR_baseline = df_burst.loc[bursts["Start"].iloc[i] - pd.Timedelta(seconds = 18+off):bursts["Start"].iloc[i] - pd.Timedelta(seconds = 8+off)]["HR"].mean()
 
-        # baseline correction
-        # df_burst["HR"] = df_burst["HR"] - HR_baseline
+        bursts.at[i, "HR_response"] = df_burst["HR"].values
+
         # express it as a percentage of the baseline
         df_burst["HR"] = df_burst["HR"] / HR_baseline * 100 - 100
-        # df_burst["t"] = np.arange(-19, 40, 1)
-        HR_bursts_df.append(df_burst)
-        HR_change_max.append(df_burst["HR"].iloc[20:].max())
-        # latency = df_burst["HR"].idxmax() - bursts["Start"].iloc[i]
-        latency_HR_change_max.append(df_burst["HR"].idxmax() - bursts["Start"].iloc[i]) # TODO start from .iloc[20:] but requires to adjust the index 
-        # time from movement onset to HR return to baseline
-        # duration_HR_response.append(   
-
-        # if np.isnan(bursts["posture_change"].iloc[i]):
-        #     posture_change.append(0)
-        # else:
-        #     posture_change.append(bursts["posture_change"].iloc[i])
-
-        AUC.append(bursts["AUC"].iloc[i])
+        bursts.at[i, "HR_response_normalized"] = df_burst["HR"].values
+        
+        bursts.loc[i, "HR_baseline"] = HR_baseline
+        bursts.loc[i, "HR_peak"] = df_burst["HR"].iloc[20:].max()
 
         if plot:
             plt.figure()
@@ -64,30 +45,43 @@ def detect_HR_change_from_RR(bursts, hr_df, off, plot = False):
             plt.plot(df_burst['HR'])
             plt.axvline(x = bursts["Start"].iloc[i], color = 'r')
             plt.axhline(y = HR_baseline, color = 'r', linestyle = '--')
+        df_burst.index = np.arange(-19, 50, 1)
 
-    return HR_bursts_df, np.array(HR_change_max), np.array(latency_HR_change_max), np.array(AUC), np.array(posture_change)
+        # latency of the HR peak
+        bursts.loc[i, "HR_peak_latency"] = df_burst["HR"].iloc[20:].idxmax()
+    return bursts
 
-def detect_ACC_change(bursts, acc_df, off, plot = False):
-    ACC_bursts_df = []
-    AUC = []
-    posture_change = []
-    acc_df = acc_df.resample('1s').std()
+def detect_ACC_change(bursts, env_diff_dict, off):
+
+    """
+    Detect ACC change from envelope of the acceleration signals
+
+    Parameters
+    ----------
+    bursts : pd.DataFrame
+        DataFrame with burst start times, end times, and duration
+    env_diff_dict : dict
+        Dictionary with envelope of the acceleration signals. Keys are "T", "LL", "RL", "LW", "RW"
+
+    Returns
+    -------
+    bursts : pd.DataFrame
+        Input DataFrame with added ACC response
+    """
+    
+    bursts["ACC_response"] = [None] * len(bursts)
+
     for i in range(len(bursts)):
-        acc_burst = acc_df.loc[bursts["start"].iloc[i] - pd.Timedelta(seconds = 19+off):bursts["start"].iloc[i] + pd.Timedelta(seconds = 40-off)]
+        limb_burst_total = np.zeros(69)
+        for limb in ["T", "LL", "RL", "LW", "RW"]:
+            if limb in bursts["Limbs"].iloc[i]:
+                limb_burst = env_diff_dict[limb].loc[bursts["Start"].iloc[i] - pd.Timedelta(seconds = 19+off):bursts["Start"].iloc[i] + pd.Timedelta(seconds = 50-off)]
+                limb_baseline = limb_burst.loc[bursts["Start"].iloc[i] - pd.Timedelta(seconds = 18+off):bursts["Start"].iloc[i] - pd.Timedelta(seconds = 8+off)].mean()
+                limb_burst = limb_burst / limb_baseline * 100 - 100
+                limb_burst_total += limb_burst
+        bursts.at[i, "ACC_response"] = limb_burst_total.tolist()
 
-        df_burst = pd.DataFrame({'ACC': acc_burst}, index = acc_burst.index)
-        ACC_baseline = df_burst.loc[bursts["start"].iloc[i] - pd.Timedelta(seconds = 18+off):bursts["start"].iloc[i] - pd.Timedelta(seconds = 8+off)]["ACC"].mean()
-
-        # baseline correction
-        df_burst["ACC"] = df_burst["ACC"] / ACC_baseline * 100 - 100
-        # df_burst["t"] = np.arange(-19, 40, 1)
-        ACC_bursts_df.append(df_burst)
-        AUC.append(bursts["AUC"].iloc[i])
-        if np.isnan(bursts["posture_change"].iloc[i]):
-            posture_change.append(0)
-        else:
-            posture_change.append(bursts["posture_change"].iloc[i])
-    return ACC_bursts_df, np.array(AUC), np.array(posture_change)
+    return bursts
 
 #### Coherent averaaging functions ####
 

@@ -1,0 +1,48 @@
+158 ['la', 'trunk', 'rw']
+Location 1: 26 agreements, 0 disagreements
+Location 2: 28 agreements, 0 disagreements
+Location 3: 20 agreements, 0 disagreements
+098 ['trunk', 'lw', 'ra']
+Location 1: 31 agreements, 1 disagreements
+Location 2: 25 agreements, 0 disagreements
+Location 3: 20 agreements, 0 disagreements
+633 ['trunk', 'ra', 'lw']
+Location 1: 67 agreements, 0 disagreements
+Location 2: 38 agreements, 0 disagreements
+Location 3: 43 agreements, 2 disagreements
+906 ['rw', 'la', 'trunk']
+Location 1: 32 agreements, 0 disagreements
+Location 2: 42 agreements, 0 disagreements
+Location 3: 48 agreements, 0 disagreements
+279 ['trunk', 'la', 'rw']
+Location 1: 11 agreements, 0 disagreements
+Location 2: 8 agreements, 0 disagreements
+Location 3: 8 agreements, 0 disagreements
+547 ['la', 'lw', 'trunk']
+Location 1: 48 agreements, 2 disagreements
+Location 2: 18 agreements, 0 disagreements
+Location 3: 7 agreements, 1 disagreements
+971 ['la', 'trunk', 'rw']
+Location 1: 22 agreements, 0 disagreements
+Location 2: 26 agreements, 0 disagreements
+Location 3: 25 agreements, 2 disagreements
+958 ['ra', 'trunk', 'lw']
+Location 1: 45 agreements, 1 disagreements
+Location 2: 22 agreements, 0 disagreements
+Location 3: 24 agreements, 0 disagreements
+815 ['trunk', 'ra', 'lw']
+Location 1: 36 agreements, 0 disagreements
+Location 2: 51 agreements, 7 disagreements
+Location 3: 36 agreements, 0 disagreements
+127 ['la', 'trunk', 'rw']
+Location 1: 61 agreements, 0 disagreements
+Location 2: 24 agreements, 0 disagreements
+Location 3: 32 agreements, 3 disagreements
+914 ['ra', 'trunk', 'lw']
+Location 1: 20 agreements, 0 disagreements
+Location 2: 21 agreements, 0 disagreements
+Location 3: 23 agreements, 0 disagreements
+965 ['rw', 'trunk', 'la']
+Location 1: 25 agreements, 0 disagreements
+Location 2: 32 agreements, 1 disagreements
+Location 3: 34 agreements, 1 disagreements
