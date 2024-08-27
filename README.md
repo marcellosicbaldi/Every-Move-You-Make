@@ -5,8 +5,8 @@ All relevant code is inside the `src` folder.
 
 In particular, `src/functions` contains the functions used to process raw accelerometer and raw ECG data; `src/detect_bursts.py` and `src/HR_response.py` are the scripts used to produce the results
 
-[!NOTE]
-FUNCTIONS
+> [!NOTE]
+> FUNCTIONS
 
 The most relevant functions are inside `src/functions/bursts.py`and `src/functions/HR_response.py`, and are:
   - `detect_bursts()`: bursts detection from raw acceleration based on signal envelopes
