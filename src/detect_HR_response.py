@@ -17,13 +17,6 @@ subjects = ["158", "098", "633", "279", "906", "547", "971", "958", "815"]
 
 SIB_GGIR = {sub: pyreadr.read_r(part3_outputFolder + "LW_" + sub + ".CWA.RData")['sib.cla.sum'][["sib.onset.time", "sib.end.time"]] for sub in subjects}
 
-bursts_lw = {sub: 0 for sub in subjects}
-bursts_rw = {sub: 0 for sub in subjects}
-bursts_ll = {sub: 0 for sub in subjects}
-bursts_rl = {sub: 0 for sub in subjects}
-bursts_trunk = {sub: 0 for sub in subjects}
-bursts_all_limbs = {sub: 0 for sub in subjects}
-bursts_all_limbs_new = {sub: 0 for sub in subjects}
 SIB = {sub: 0 for sub in subjects}
 
 bursts_df = pd.DataFrame()

@@ -83,7 +83,7 @@ def detect_bursts(acc, envelope = True, resample_envelope = True, alfa = None):
     Parameters
     ----------
     acc : pd.Series
-        Band-pass filtered accelerometer signal magnitude vector
+        Raw accelerometer signal magnitude vector
     envelope : bool, optional
         If True, detect bursts based on the envelope of the signal
         If False, detect bursts based on the std of the signal
