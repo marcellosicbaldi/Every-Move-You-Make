@@ -10,8 +10,8 @@
 - 🧩 **Multi-sensor setup**: 5 IMUs + PPG armband + ECG chest belt
 - 🏠 **Home recordings** in healthy participants
 - 🦵 Detects **segmental → regional → global** movements across body locations
-- ❤️ Quantifies **movement-triggered HR & PWA dynamics** (time-locked responses)
 - ✅ Movement detection **validated vs. human annotations**
+- ❤️ Quantifies **movement-dependent HR & PWA changes** (time-locked responses)
 
 ---
 
@@ -23,47 +23,31 @@ This repository supports a pipeline that:
 1. Detects movements from raw accelerometry across multiple body segments  
 2. Merges overlapping segmental events into composite movement types  
 3. Extracts time-locked **HR** (ECG) and **PWA** (PPG) responses around movements  
-4. Summarizes movement “topography” and cardiovascular signatures across sleep/wake :contentReference[oaicite:2]{index=2}
+4. Summarizes movement “topography” and cardiovascular signatures across sleep/wake
 
 ---
 
 ## 🧪 Dataset (LOOKING-GLASS MIAR)
 
-**N = 12** healthy volunteers recorded for ~1 day including one night at home. :contentReference[oaicite:3]{index=3}
-
+**N = 12** healthy volunteers recorded for ~1 day including one night at home.
 ### Sensors
 - **5× IMUs** (Axivity AX6, 100 Hz): both wrists, both ankles, lower back (L5)
 - **PPG** (Polar Verity Sense, 55 Hz)
 - **ECG** (Polar H10, 130 Hz)
-- Sleep diary + actigraphy-defined sleep/wake (VH2015/GGIR on non-dominant wrist) :contentReference[oaicite:4]{index=4}
+- Sleep diary + actigraphy-defined sleep/wake (VH2015 on non-dominant wrist)
 
 ### Synchronization
-Devices are aligned via a **mechanical “tap” protocol** using bursts of acceleration as time markers (plus re-sync strategies if Bluetooth reconnections occur). :contentReference[oaicite:5]{index=5}
+Devices are aligned via a **mechanical “tap” protocol** using bursts of acceleration as time markers.
 
 ---
 
-## 🦿 Movement detection (high level)
-
-For each body segment:
-- compute acceleration **SVM**
-- band-pass filter
-- derive upper/lower envelopes
-- detect bursts via **threshold crossings** of envelope difference :contentReference[oaicite:6]{index=6}
-
-Thresholds are tuned and validated against **manual movement annotations** (two independent raters → consensus). :contentReference[oaicite:7]{index=7}
-
----
 
 ## 🗺️ Movement “topography”
 
 Detected events are categorized as:
 - **Segmental** (single sensor)
 - **Regional** (upper body / lower body / cross-regional)
-- **Global** (whole-body; also used to infer postural changes when applicable)
-
-Overlapping events across segments are merged into a **single composite movement** with:
-- duration = first onset → last offset  
-- magnitude = sum of peak envelope differences across involved segments :contentReference[oaicite:8]{index=8}
+- **Global** (whole-body; also used to infer postural changes)
 
 ---
 
@@ -74,7 +58,7 @@ For each movement:
 - baseline-normalize HR and PWA
 - compute summary peaks/troughs (e.g., HR peak, PWA trough)
 - optional filtering: keep **isolated movements** (no other movement within ±30 s)
-- manual QC for HR/PPG artifacts (short segments interpolated; long segments dropped) :contentReference[oaicite:9]{index=9}
+- manual QC for HR/PPG artifacts (short segments interpolated; long segments dropped)
 
 ---
 
@@ -84,7 +68,7 @@ For each movement:
 - Movements are associated with characteristic **HR increases** and **PWA decreases**,
   with patterns that vary by movement type and sleep/wake state.
 - Larger, more complex movements tend to show stronger cardiovascular responses,
-  supporting the idea of **movement-related autonomic signatures** as potential digital biomarkers. :contentReference[oaicite:10]{index=10}
+  supporting the idea of **movement-related autonomic signatures** as potential digital biomarkers.
 
 ---
 
