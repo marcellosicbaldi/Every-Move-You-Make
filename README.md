@@ -1,4 +1,4 @@
-# Movement-HR-Sleep
+# Sleep Movements and Cardiovascular Correlates with a Wearable Multi-Sensor System
 > Companion repository for:  
 > **“Mapping the physiological landscape of body movements during nocturnal sleep and wakefulness and their cardiovascular correlates with a wearable multi-sensor array”**  
 > Sicbaldi M., Di Florio P., Palmerini L., Ferri R., Chiari L., Silvani A. — *Scientific Reports* (2025).
